@@ -87,6 +87,16 @@ const updateEmployeeRole = async (employeeId, newRoleId) => {
   }
 };
 
+// Function to clear all rows from a table
+const clearTable = async (tableName) => {
+  try {
+    await pool.query(`DELETE FROM ${tableName}`);
+    console.log(`All rows deleted from the ${tableName} table.`);
+  } catch (error) {
+    console.error('Error:', error);
+  }
+};
+
 // Function to start the application
 const startApp = async () => {
   try {
@@ -103,6 +113,7 @@ const startApp = async () => {
         'Add a role',
         'Add an employee',
         'Update an employee role',
+        'Clear a table',
         'Exit',
       ],
     });
@@ -119,26 +130,25 @@ const startApp = async () => {
         await viewAllEmployees();
         break;
       case 'Add a department':
-        const departmentName = (await inquirer.prompt({ type: 'input', name: 'name', message: 'Enter the department name:' })).name;
-        await addDepartment(departmentName);
+        // ... (existing code)
         break;
       case 'Add a role':
-        const roleTitle = (await inquirer.prompt({ type: 'input', name: 'title', message: 'Enter the role title:' })).title;
-        const roleSalary = (await inquirer.prompt({ type: 'input', name: 'salary', message: 'Enter the role salary:' })).salary;
-        const roleDepartmentId = (await inquirer.prompt({ type: 'input', name: 'departmentId', message: 'Enter the department ID:' })).departmentId;
-        await addRole(roleTitle, roleSalary, roleDepartmentId);
+        // ... (existing code)
         break;
       case 'Add an employee':
-        const employeeFirstName = (await inquirer.prompt({ type: 'input', name: 'firstName', message: 'Enter the employee\'s first name:' })).firstName;
-        const employeeLastName = (await inquirer.prompt({ type: 'input', name: 'lastName', message: 'Enter the employee\'s last name:' })).lastName;
-        const employeeRoleId = (await inquirer.prompt({ type: 'input', name: 'roleId', message: 'Enter the role ID:' })).roleId;
-        const employeeManagerId = (await inquirer.prompt({ type: 'input', name: 'managerId', message: 'Enter the manager ID (or leave blank if none):' })).managerId;
-        await addEmployee(employeeFirstName, employeeLastName, employeeRoleId, employeeManagerId);
+        // ... (existing code)
         break;
       case 'Update an employee role':
-        const employeeId = (await inquirer.prompt({ type: 'input', name: 'employeeId', message: 'Enter the employee ID:' })).employeeId;
-        const newRoleId = (await inquirer.prompt({ type: 'input', name: 'newRoleId', message: 'Enter the new role ID:' })).newRoleId;
-        await updateEmployeeRole(employeeId, newRoleId);
+        // ... (existing code)
+        break;
+      case 'Clear a table':
+        const { tableToClear } = await inquirer.prompt({
+          type: 'list',
+          name: 'tableToClear',
+          message: 'Select a table to clear:',
+          choices: ['department', 'role', 'employee'],
+        });
+        await clearTable(tableToClear);
         break;
       case 'Exit':
         console.log('Goodbye!');
@@ -156,3 +166,8 @@ const startApp = async () => {
 
 // Start the application
 startApp();
+
+
+
+
+
