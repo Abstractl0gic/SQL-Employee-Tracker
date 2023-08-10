@@ -1,7 +1,7 @@
 const mysql = require('mysql2/promise');
 const inquirer = require('inquirer');
 
-// Create a MySQL connection pool
+// create a MySQL connection pool
 const pool = mysql.createPool({
   host: 'localhost',
   user: 'root',
@@ -12,27 +12,31 @@ const pool = mysql.createPool({
   queueLimit: 0,
 });
 
-// Function to view all departments
+// function to view all departments
 const viewAllDepartments = async () => {
   try {
     const [departments] = await pool.query('SELECT * FROM department');
     console.table(departments);
+    await returnToHomeScreen();
   } catch (error) {
     console.error('Error:', error);
+    await returnToHomeScreen();
   }
 };
 
-// Function to view all roles
+// function to view all roles
 const viewAllRoles = async () => {
   try {
     const [roles] = await pool.query('SELECT * FROM role');
     console.table(roles);
+    await returnToHomeScreen();
   } catch (error) {
     console.error('Error:', error);
+    await returnToHomeScreen();
   }
 };
 
-// Function to view all employees
+// function to view all employees
 const viewAllEmployees = async () => {
   try {
     const [employees] = await pool.query(`
@@ -42,52 +46,50 @@ const viewAllEmployees = async () => {
       JOIN department ON role.department_id = department.id
     `);
     console.table(employees);
+    await returnToHomeScreen();
   } catch (error) {
     console.error('Error:', error);
+    await returnToHomeScreen();
   }
 };
 
-// Function to add a department
+// function to add a department
 const addDepartment = async (departmentName) => {
   try {
     await pool.query('INSERT INTO department (name) VALUES (?)', [departmentName]);
-    console.log('Department added successfully.');
   } catch (error) {
     console.error('Error:', error);
   }
 };
 
-// Function to add a role
+// function to add a role
 const addRole = async (title, salary, departmentId) => {
   try {
     await pool.query('INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)', [title, salary, departmentId]);
-    console.log('Role added successfully.');
   } catch (error) {
     console.error('Error:', error);
   }
 };
 
-// Function to add an employee
+// function to add an employee
 const addEmployee = async (firstName, lastName, roleId, managerId) => {
   try {
     await pool.query('INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)', [firstName, lastName, roleId, managerId]);
-    console.log('Employee added successfully.');
   } catch (error) {
     console.error('Error:', error);
   }
 };
 
-// Function to update an employee's role
+// function to update an employee's role
 const updateEmployeeRole = async (employeeId, newRoleId) => {
   try {
     await pool.query('UPDATE employee SET role_id = ? WHERE id = ?', [newRoleId, employeeId]);
-    console.log('Employee role updated successfully.');
   } catch (error) {
     console.error('Error:', error);
   }
 };
 
-// Function to clear all rows from a table
+// function to clear all rows from a table
 const clearTable = async (tableName) => {
   try {
     await pool.query(`DELETE FROM ${tableName}`);
@@ -97,10 +99,32 @@ const clearTable = async (tableName) => {
   }
 };
 
-// Function to start the application
+// function to return to the home screen
+const returnToHomeScreen = async () => {
+  try {
+    const { returnHome } = await inquirer.prompt({
+      type: 'confirm',
+      name: 'returnHome',
+      message: 'Return to the home screen?',
+      default: true,
+    });
+
+    if (returnHome) {
+      await startApp();
+    } else {
+      console.log('Goodbye!');
+      await pool.end();
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    await pool.end();
+  }
+};
+
+// function to start the application
 const startApp = async () => {
   try {
-    // Prompt the user for actions
+    // prompt the user for actions
     const { action } = await inquirer.prompt({
       type: 'list',
       name: 'action',
@@ -118,7 +142,7 @@ const startApp = async () => {
       ],
     });
 
-    // Call the appropriate function based on user's choice
+    // call the appropriate function based on user's choice
     switch (action) {
       case 'View all departments':
         await viewAllDepartments();
@@ -130,44 +154,168 @@ const startApp = async () => {
         await viewAllEmployees();
         break;
       case 'Add a department':
-        // ... (existing code)
+        await addDepartmentPrompt();
         break;
       case 'Add a role':
-        // ... (existing code)
+        await addRolePrompt();
         break;
       case 'Add an employee':
-        // ... (existing code)
+        await addEmployeePrompt();
         break;
       case 'Update an employee role':
-        // ... (existing code)
+        await updateEmployeeRolePrompt();
         break;
       case 'Clear a table':
-        const { tableToClear } = await inquirer.prompt({
-          type: 'list',
-          name: 'tableToClear',
-          message: 'Select a table to clear:',
-          choices: ['department', 'role', 'employee'],
-        });
-        await clearTable(tableToClear);
+        await clearTablePrompt();
         break;
       case 'Exit':
         console.log('Goodbye!');
+        await pool.end();
         break;
       default:
         console.log('Invalid choice');
     }
   } catch (error) {
     console.error('Error:', error);
-  } finally {
-    // Release all connections in the pool and close it
-    await pool.end();
   }
 };
 
-// Start the application
+// function to add a department with the option to add more
+const addDepartmentPrompt = async () => {
+  try {
+    const { departmentName, addMore } = await inquirer.prompt([
+      {
+        type: 'input',
+        name: 'departmentName',
+        message: 'Enter the department name:',
+      },
+      {
+        type: 'confirm',
+        name: 'addMore',
+        message: 'Do you want to add another department?',
+        default: false,
+      },
+    ]);
+
+    await addDepartment(departmentName);
+
+    if (addMore) {
+      await addDepartmentPrompt();
+    } else {
+      await returnToHomeScreen();
+    }
+  } catch (error) {
+    console.error('Error:', error);
+  }
+};
+
+// function to add a role with the option to add more
+const addRolePrompt = async () => {
+  try {
+    const { title, salary, departmentName, createDepartment, addMore } = await inquirer.prompt([
+      {
+        type: 'input',
+        name: 'title',
+        message: 'Enter the title of the role:',
+      },
+      {
+        type: 'input',
+        name: 'salary',
+        message: 'Enter the salary for the role:',
+      },
+      {
+        type: 'input',
+        name: 'departmentName',
+        message: 'Enter the department name for the role:',
+      },
+      {
+        type: 'confirm',
+        name: 'createDepartment',
+        message: 'The department does not exist. Do you want to create it?',
+        default: true,
+      },
+      {
+        type: 'confirm',
+        name: 'addMore',
+        message: 'Do you want to add another role?',
+        default: false,
+      },
+    ]);
+
+    if (createDepartment) {
+      await addDepartment(departmentName);
+      console.log('Department added successfully.');
+    }
+
+    const [department] = await pool.query('SELECT id FROM department WHERE name = ?', [departmentName]);
+    const departmentId = department[0].id;
+
+    await addRole(title, salary, departmentId);
+
+    if (addMore) {
+      await addRolePrompt();
+    } else {
+      await returnToHomeScreen();
+    }
+  } catch (error) {
+    console.error('Error:', error);
+  }
+};
+
+// function to add an employee with the option to add more
+const addEmployeePrompt = async () => {
+  try {
+    const { firstName, lastName, roleId, managerId, addMore } = await inquirer.prompt([
+      // ... (rest of the prompts)
+    ]);
+
+    await addEmployee(firstName, lastName, roleId, managerId);
+
+    if (addMore) {
+      await addEmployeePrompt();
+    } else {
+      await returnToHomeScreen();
+    }
+  } catch (error) {
+    console.error('Error:', error);
+  }
+};
+
+// function to update an employee's role with the option to update more
+const updateEmployeeRolePrompt = async () => {
+  try {
+    const { employeeId, newRoleId, updateMore } = await inquirer.prompt([
+      // ... (rest of the prompts)
+    ]);
+
+    await updateEmployeeRole(employeeId, newRoleId);
+
+    if (updateMore) {
+      await updateEmployeeRolePrompt();
+    } else {
+      await returnToHomeScreen();
+    }
+  } catch (error) {
+    console.error('Error:', error);
+  }
+};
+
+// function to clear a table
+const clearTablePrompt = async () => {
+  try {
+    const { tableToClear } = await inquirer.prompt({
+      type: 'list',
+      name: 'tableToClear',
+      message: 'Select a table to clear:',
+      choices: ['department', 'role', 'employee'],
+    });
+
+    await clearTable(tableToClear);
+    await returnToHomeScreen();
+  } catch (error) {
+    console.error('Error:', error);
+  }
+};
+
+// start the application
 startApp();
-
-
-
-
-
