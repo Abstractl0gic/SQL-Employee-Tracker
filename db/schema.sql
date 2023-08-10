@@ -25,7 +25,7 @@ CREATE TABLE employee (
   first_name VARCHAR(30) NOT NULL,
   last_name VARCHAR(30) NOT NULL,
   role_id INT,
-  manager_id INT,
+  manager_id INT NULL, -- Manager can be NULL to indicate if they are a manager or not
   FOREIGN KEY (role_id) REFERENCES role (id),
   FOREIGN KEY (manager_id) REFERENCES employee (id)
 );
